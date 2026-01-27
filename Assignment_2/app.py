@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import joblib
 import os
+from pathlib import Path
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import confusion_matrix, classification_report, accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 import matplotlib.pyplot as plt
@@ -15,11 +16,14 @@ st.set_page_config(page_title="Telecom Churn Prediction", layout="wide")
 st.title("📊 Telecom Churn Prediction System")
 st.markdown("Predict customer churn using multiple machine learning models")
 
+# Get the base directory of the script
+BASE_DIR = Path(__file__).parent
+
 # Load models
 @st.cache_resource
 def load_models():
     models = {}
-    model_dir = "model"
+    model_dir = BASE_DIR / "model"
     
     model_files = {
         "Logistic Regression": "logistic_regression_model.pkl",
@@ -31,11 +35,11 @@ def load_models():
     }
     
     for model_name, file_name in model_files.items():
-        file_path = os.path.join(model_dir, file_name)
-        if os.path.exists(file_path):
+        file_path = model_dir / file_name
+        if file_path.exists():
             models[model_name] = joblib.load(file_path)
         else:
-            st.warning(f"Model {file_name} not found!")
+            st.warning(f"Model {file_name} not found at {file_path}!")
     
     return models
 
@@ -44,12 +48,15 @@ def load_models():
 def load_sample_data():
     try:
         # Try both possible filenames
-        if os.path.exists('Churn.csv'):
-            df = pd.read_csv('Churn.csv')
-        elif os.path.exists('churn.csv'):
-            df = pd.read_csv('churn.csv')
+        churn_path = BASE_DIR / 'Churn.csv'
+        churn_path_lower = BASE_DIR / 'churn.csv'
+        
+        if churn_path.exists():
+            df = pd.read_csv(churn_path)
+        elif churn_path_lower.exists():
+            df = pd.read_csv(churn_path_lower)
         else:
-            st.error("Churn.csv not found in the project directory")
+            st.error(f"Churn.csv not found in {BASE_DIR}")
             return None
         return df
     except Exception as e:
