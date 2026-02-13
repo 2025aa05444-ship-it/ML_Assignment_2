@@ -396,9 +396,46 @@ else:
                     
                     if st.button("🔍 Evaluate Model"):
                         try:
+                            # Preprocess X_test the same way as training
+                            # Force TotalCharges to be numeric
+                            if 'TotalCharges' in X_test.columns:
+                                X_test['TotalCharges'] = pd.to_numeric(X_test['TotalCharges'], errors='coerce')
+                                X_test['TotalCharges'] = X_test['TotalCharges'].fillna(X_test['TotalCharges'].median())
+                            
+                            # Remove customerID if present
+                            if 'customerID' in X_test.columns:
+                                X_test = X_test.drop('customerID', axis=1)
+                            
+                            # Apply one-hot encoding
+                            X_test_processed = pd.get_dummies(X_test, dtype=int)
+                            
+                            # Define all expected features
+                            expected_features = ['SeniorCitizen', 'Partner', 'Dependents', 'tenure', 'PhoneService',
+                                               'PaperlessBilling', 'MonthlyCharges', 'TotalCharges', 'gender_Female',
+                                               'gender_Male', 'MultipleLines_No', 'MultipleLines_No phone service',
+                                               'MultipleLines_Yes', 'InternetService_DSL', 'InternetService_Fiber optic',
+                                               'InternetService_No', 'OnlineSecurity_No', 'OnlineSecurity_No internet service',
+                                               'OnlineSecurity_Yes', 'OnlineBackup_No', 'OnlineBackup_No internet service',
+                                               'OnlineBackup_Yes', 'DeviceProtection_No', 'DeviceProtection_No internet service',
+                                               'DeviceProtection_Yes', 'TechSupport_No', 'TechSupport_No internet service',
+                                               'TechSupport_Yes', 'StreamingTV_No', 'StreamingTV_No internet service',
+                                               'StreamingTV_Yes', 'StreamingMovies_No', 'StreamingMovies_No internet service',
+                                               'StreamingMovies_Yes', 'Contract_Month-to-month', 'Contract_One year',
+                                               'Contract_Two year', 'PaymentMethod_Bank transfer (automatic)',
+                                               'PaymentMethod_Credit card (automatic)', 'PaymentMethod_Electronic check',
+                                               'PaymentMethod_Mailed check']
+                            
+                            # Add missing columns with 0s
+                            for col in expected_features:
+                                if col not in X_test_processed.columns:
+                                    X_test_processed[col] = 0
+                            
+                            # Select only expected features in correct order
+                            X_test_processed = X_test_processed[expected_features]
+                            
                             # Make predictions
-                            y_pred = models[selected_model].predict(X_test)
-                            y_pred_proba = models[selected_model].predict_proba(X_test)[:, 1]
+                            y_pred = models[selected_model].predict(X_test_processed)
+                            y_pred_proba = models[selected_model].predict_proba(X_test_processed)[:, 1]
                             
                             st.success("✅ Model evaluation completed!")
                             
